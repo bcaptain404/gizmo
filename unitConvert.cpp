@@ -67,24 +67,7 @@ void convert_g_event(GtkWidget *entry, gpointer data ) {
     widgets->mutex = false;
 }
 
-int GetWindowID( void ) {
-    Window *list;
-    xdo_search_t search;
-    unsigned int nwins;
-    memset( &search, 0, sizeof(xdo_search_t));
-    search.max_depth = -1;
-    search.require = xdo_search::SEARCH_ANY;
-    search.searchmask |= SEARCH_NAME;
-    search.winname = WINDOW_NAME;
-    xdo_t *p_xdo = xdo_new(NULL);
-    const int id = xdo_search_windows( p_xdo, &search, &list, &nwins);
-    std::cout << "Window ID: " << id << std::endl;
-    return id;
-}
-
 void Gadgetify( GtkWindow *window ) {
-    const auto id = GetWindowID();
-
     gtk_window_set_decorated( window, false );
     gtk_window_set_keep_below( window, true );
     gtk_window_set_skip_taskbar_hint( window, true );
