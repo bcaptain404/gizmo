@@ -1,22 +1,64 @@
 #include <gtk/gtk.h>
 #include <glib.h>
 #include <glib/gprintf.h>
+#include <iostream>
+
+constexpr const float G_TO_OZ = 28.3495;
+constexpr const float OZ_TO_G = 1/G_TO_OZ;
+constexpr const float LB_TO_OZ = 16;
+constexpr const float OZ_TO_LB = 1/LB_TO_OZ;
 
 struct ClickCallbackDataT {
-    GtkEntry *txt_in;
-    GtkEntry *txt_out;
+    GtkEntry *txt_oz;
+    GtkEntry *txt_lb;
+    GtkEntry *txt_g;
+    bool mutex;
 };
 
-void convert_button_clicked(GtkWidget *button, gpointer data ) {
-    ClickCallbackDataT * widgets = (ClickCallbackDataT*)(data);
+void convert_lb_event(GtkWidget *entry, gpointer data );
+void convert_oz_event(GtkWidget *entry, gpointer data );
+void convert_g_event(GtkWidget *entry, gpointer data );
 
-    const gchar *input_text = gtk_entry_get_text(GTK_ENTRY(widgets->txt_in));
-    
-    gchar *converted_text = g_strdup(g_ascii_strup(input_text, strlen(input_text)));
-    
-    gtk_entry_set_text(widgets->txt_out, converted_text);
-  
-    g_free(converted_text);
+void convert_lb_event(GtkWidget *entry, gpointer data ) {
+    ClickCallbackDataT * widgets = (ClickCallbackDataT*)(data);
+    if ( widgets->mutex == true )
+        return;
+    widgets->mutex = true;
+    const gchar *pounds_text = gtk_entry_get_text(GTK_ENTRY(widgets->txt_lb));
+    const float pounds = g_strtod(pounds_text, NULL);
+    const float ounces = pounds * LB_TO_OZ;
+    const float grams = ounces * G_TO_OZ;
+    gtk_entry_set_text(widgets->txt_oz, g_strdup_printf("%f", ounces));
+    gtk_entry_set_text(widgets->txt_g, g_strdup_printf("%f", grams));
+    widgets->mutex = false;
+}
+
+void convert_oz_event(GtkWidget *entry, gpointer data ) {
+    ClickCallbackDataT * widgets = (ClickCallbackDataT*)(data);
+    if ( widgets->mutex == true )
+        return;
+    widgets->mutex = true;
+    const gchar *ounces_text = gtk_entry_get_text(GTK_ENTRY(widgets->txt_oz));
+    const float ounces = g_strtod(ounces_text, NULL);
+    const float pounds = ounces * OZ_TO_LB;
+    const float grams = ounces * G_TO_OZ;
+    gtk_entry_set_text(widgets->txt_g, g_strdup_printf("%f", grams));
+    gtk_entry_set_text(widgets->txt_lb, g_strdup_printf("%f", pounds));
+    widgets->mutex = false;
+}
+
+void convert_g_event(GtkWidget *entry, gpointer data ) {
+    ClickCallbackDataT * widgets = (ClickCallbackDataT*)(data);
+    if ( widgets->mutex == true )
+        return;
+    widgets->mutex = true;
+    const gchar *grams_text = gtk_entry_get_text(GTK_ENTRY(widgets->txt_g));
+    const float grams = g_strtod(grams_text, NULL);
+    const float ounces = grams * OZ_TO_G;
+    const float pounds = ounces * LB_TO_OZ;
+    gtk_entry_set_text(widgets->txt_oz, g_strdup_printf("%f", ounces));
+    gtk_entry_set_text(widgets->txt_lb, g_strdup_printf("%f", pounds));
+    widgets->mutex = false;
 }
 
 int main(int argc, char *argv[]) {
@@ -27,18 +69,34 @@ int main(int argc, char *argv[]) {
     gtk_window_set_title(GTK_WINDOW(window), "Simple Converter");
     
     ClickCallbackDataT data;
-    data.txt_in = (GtkEntry*)gtk_entry_new();
-    data.txt_out = (GtkEntry*)gtk_entry_new();
+    GtkLabel *lbl_oz = (GtkLabel*)gtk_label_new("oz");
+    GtkLabel *lbl_lb = (GtkLabel*)gtk_label_new("lb");
+    GtkLabel *lbl_g = (GtkLabel*)gtk_label_new("g");
+    data.txt_oz = (GtkEntry*)gtk_entry_new();
+    data.txt_lb = (GtkEntry*)gtk_entry_new();
+    data.txt_g = (GtkEntry*)gtk_entry_new();
+    data.mutex = false;
     
-    GtkWidget *button = gtk_button_new_with_label("Convert");
-
-    g_signal_connect(button, "clicked", G_CALLBACK(convert_button_clicked), &data); 
+    g_signal_connect(data.txt_oz, "changed", G_CALLBACK(convert_oz_event), &data); 
+    g_signal_connect(data.txt_lb, "changed", G_CALLBACK(convert_lb_event), &data); 
+    g_signal_connect(data.txt_g, "changed", G_CALLBACK(convert_g_event), &data); 
+    
+    GtkWidget *hbox_oz = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
+    gtk_box_pack_start(GTK_BOX(hbox_oz), (GtkWidget*)lbl_oz, TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(hbox_oz), (GtkWidget*)data.txt_oz, TRUE, TRUE, 0);
+    
+    GtkWidget *hbox_lb = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
+    gtk_box_pack_start(GTK_BOX(hbox_lb), (GtkWidget*)lbl_lb, TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(hbox_lb), (GtkWidget*)data.txt_lb, TRUE, TRUE, 0);
+    
+    GtkWidget *hbox_g = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
+    gtk_box_pack_start(GTK_BOX(hbox_g), (GtkWidget*)lbl_g, TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(hbox_g), (GtkWidget*)data.txt_g, FALSE, FALSE, 0);
     
     GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
-    gtk_box_pack_start(GTK_BOX(vbox), (GtkWidget*)data.txt_in, TRUE, TRUE, 0);
-    gtk_box_pack_start(GTK_BOX(vbox), (GtkWidget*)data.txt_out, FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(vbox), button, FALSE, FALSE, 0);
-    
+    gtk_container_add(GTK_CONTAINER(vbox), hbox_lb);
+    gtk_container_add(GTK_CONTAINER(vbox), hbox_oz);
+    gtk_container_add(GTK_CONTAINER(vbox), hbox_g);
     gtk_container_add(GTK_CONTAINER(window), vbox);
     gtk_widget_show_all(window);
 
