@@ -2,7 +2,13 @@
 #include <glib.h>
 #include <glib/gprintf.h>
 #include <iostream>
+extern "C" {
+    #include <xdo.h>
+}
+#include <string>
 
+
+constexpr const char *WINDOW_NAME="Weight Unit Converter";
 constexpr const float G_TO_OZ = 28.3495;
 constexpr const float OZ_TO_G = 1/G_TO_OZ;
 constexpr const float LB_TO_OZ = 16;
@@ -61,12 +67,43 @@ void convert_g_event(GtkWidget *entry, gpointer data ) {
     widgets->mutex = false;
 }
 
+int GetWindowID( void ) {
+    Window *list;
+    xdo_search_t search;
+    unsigned int nwins;
+    memset( &search, 0, sizeof(xdo_search_t));
+    search.max_depth = -1;
+    search.require = xdo_search::SEARCH_ANY;
+    search.searchmask |= SEARCH_NAME;
+    search.winname = WINDOW_NAME;
+    xdo_t *p_xdo = xdo_new(NULL);
+    const int id = xdo_search_windows( p_xdo, &search, &list, &nwins);
+    std::cout << "Window ID: " << id << std::endl;
+    return id;
+}
+
+void Gadgetify( GtkWindow *window ) {
+    const auto id = GetWindowID();
+
+    gtk_window_set_decorated( window, false );
+    gtk_window_set_keep_below( window, true );
+    gtk_window_set_skip_taskbar_hint( window, true );
+    gtk_window_set_skip_pager_hint( window, true );
+    gtk_window_stick( window );
+}
+
+bool shutting_down;
+void ProgramExit( void ) {
+    shutting_down=true;
+    gtk_main_quit();
+}
+
 int main(int argc, char *argv[]) {
     gtk_init(&argc, &argv); 
     
-    GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    g_signal_connect( window, "destroy", G_CALLBACK( gtk_main_quit), NULL ); 
-    gtk_window_set_title(GTK_WINDOW(window), "Simple Converter");
+    GtkWindow *window = (GtkWindow*) gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    g_signal_connect( window, "destroy", G_CALLBACK( ProgramExit ), NULL ); 
+    gtk_window_set_title(GTK_WINDOW(window), WINDOW_NAME);
     
     ClickCallbackDataT data;
     GtkLabel *lbl_oz = (GtkLabel*)gtk_label_new("oz");
@@ -98,9 +135,12 @@ int main(int argc, char *argv[]) {
     gtk_container_add(GTK_CONTAINER(vbox), hbox_oz);
     gtk_container_add(GTK_CONTAINER(vbox), hbox_g);
     gtk_container_add(GTK_CONTAINER(window), vbox);
-    gtk_widget_show_all(window);
+    gtk_widget_show_all( (GtkWidget*) window);
+
+    shutting_down=false;
+    gtk_main_iteration();
+    Gadgetify( window );
 
     gtk_main();
-    //gtk_widget_destroy(window);
     return 0;
 }
