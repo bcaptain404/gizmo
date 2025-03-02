@@ -1,11 +1,13 @@
 #include <gtk/gtk.h>
+#include <glib.h>
+#include <glib/gprintf.h>
 
 void convert_button_clicked(GtkWidget *button, gpointer data) {
     GtkWidget *entry_input = GTK_WIDGET(data);
-    gchar *input_text = gtk_entry_get_text(GTK_ENTRY(entry_input));
+    const gchar *input_text = gtk_entry_get_text(GTK_ENTRY(entry_input));
     
     // Perform conversion logic here (e.g., convert to uppercase)
-    gchar *converted_text = g_strdup(g_ascii_strupcase(input_text)); 
+    gchar *converted_text = g_strdup(g_ascii_strup(input_text, strlen(input_text))); 
     
     GtkWidget *label_output = gtk_widget_get_parent(button); // Get the label widget
     gtk_label_set_text(GTK_LABEL(label_output), converted_text);
