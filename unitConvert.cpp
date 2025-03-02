@@ -68,6 +68,21 @@ void convert_g_event(GtkWidget *entry, gpointer data ) {
 }
 
 void Gadgetify( GtkWindow *window ) {
+    auto win = (GtkWidget*)window;
+    // Alpha
+    //GdkScreen *screen;
+    //GdkVisual *visual;
+    //gtk_widget_set_app_paintable( win, TRUE );
+    //screen = gdk_screen_get_default();
+    //visual = gdk_screen_get_rgba_visual(screen);
+    //if (visual != NULL && gdk_screen_is_composited(screen)) {
+        //gtk_widget_set_visual( win, visual );
+    //}
+
+    // alpha
+    gtk_widget_set_opacity( win, 0.6f );
+
+    // set into desktop
     gtk_window_set_decorated( window, false );
     gtk_window_set_keep_below( window, true );
     gtk_window_set_skip_taskbar_hint( window, true );
