@@ -17,8 +17,10 @@ function Go() {
     local LIBS=(
         "-l glib-2.0"
         "-l gtk-3"
+        "-l gdk-3"
         "-l pthread"
         "-l gobject-2.0"
+        "-l xdo"
         #"-l gthread-2.0" 
         #"-l lrt"
         #"-l gstreamer"
